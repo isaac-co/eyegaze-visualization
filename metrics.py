@@ -200,3 +200,4 @@ def get_participants():
     # Ordering by participant number
     df = pd.DataFrame({'participant':participants,'order':orders})
     df.sort_values(by="order", inplace=True)
+    return df['participant'].tolist()
