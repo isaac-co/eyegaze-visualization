@@ -19,12 +19,16 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 add_data = pd.read_csv(f'datasets/additional_participant_data.csv', sep=',')
 top = pd.read_csv(f'datasets/top20.csv', sep=',')
 bot = pd.read_csv(f'datasets/bottom20.csv', sep=',')
-all = pd.read_csv(f'datasets/groups_metrics.csv', sep=',')
+both_groups = pd.read_csv(f'datasets/groups_metrics.csv', sep=',')
+all = pd.read_csv(f'datasets/all_metrics.csv', sep=',')
 comp = pd.read_csv(f'datasets/groups_comparison.csv', sep=',')
 participants = get_participants()
 
 # Vars
 participant1 = 'p1'
+ontology1 = 1
+participant2 = 'p2'
+ontology2 = 1
 labels_table = ["ID", "Ontology", "Visualization", "Task Success", "Time on Task (min)"]
 info_participant = [
     "ID",
@@ -38,16 +42,21 @@ info_participant = [
 ## TODO: GET A DATAFRAME WITH ALL METRICS FOR ALL PARTICIPANTS EXPORTED TO DATASETS
 # CHANGE TABLE TO CARDS AND SHOW METRICS
 
-participant_dropdown = dcc.Dropdown(id='participant1', 
+# Participant 1
+participant_dropdown1 = dcc.Dropdown(id='participant1', 
     options=participants, 
     value='p1')
 
-metrics_table = dash_table.DataTable(
-    id="metrics_table",
+ontology_dropdown1 = dcc.Dropdown(id='ontology1', 
+    options=[1,2], 
+    value=1)
+
+metrics_table1 = dash_table.DataTable(
+    id="metrics_table1",
     columns=[
         {"name": col, "id": info_participant[idx]} for (idx, col) in enumerate(labels_table)
     ],
-    data=add_data[add_data["ID"] == participant1].to_dict("records"),
+    data=add_data[(add_data["ID"] == participant1) & (add_data["Visualization"] == ontology1)].to_dict("records"),
     style_cell={"textAlign": "left", "font_size": "14px"},
     style_data_conditional=[
         {"if": {"row_index": "odd"}, "backgroundColor": "rgb(248, 248, 248)"}
@@ -55,13 +64,63 @@ metrics_table = dash_table.DataTable(
     style_header={"backgroundColor": "rgb(230, 230, 230)", "fontWeight": "bold"},
 )
 
-controls_participant = dbc.Card(
+controls_participant1 = dbc.Card(
     [
         dbc.Form(
             [
-                html.Label('Choose data:'), 
+                html.Label('Choose a participant:'), 
                 html.Br(), 
-                participant_dropdown,
+                participant_dropdown1,
+            ]
+        ),
+        dbc.Form(
+            [
+                html.Label('Choose a visualization:'),
+                html.Br(), 
+                ontology_dropdown1,
+            ]
+        ),
+    ],
+    body=True,
+    className='controls'
+)
+
+# Participant 2
+participant_dropdown2 = dcc.Dropdown(id='participant2', 
+    options=participants, 
+    value='p2')
+
+ontology_dropdown2 = dcc.Dropdown(id='ontology2', 
+    options=[1,2], 
+    value=1)
+
+metrics_table2 = dash_table.DataTable(
+    id="metrics_table2",
+    columns=[
+        {"name": col, "id": info_participant[idx]} for (idx, col) in enumerate(labels_table)
+    ],
+    data=add_data[(add_data["ID"] == participant2) & (add_data["Visualization"] == ontology2)].to_dict("records"),
+    style_cell={"textAlign": "left", "font_size": "14px"},
+    style_data_conditional=[
+        {"if": {"row_index": "odd"}, "backgroundColor": "rgb(248, 248, 248)"}
+    ],
+    style_header={"backgroundColor": "rgb(230, 230, 230)", "fontWeight": "bold"},
+)
+
+controls_participant2 = dbc.Card(
+    [
+        dbc.Form(
+            [
+                html.Label('Choose a participant:'), 
+                html.Br(), 
+                participant_dropdown2,
+            ]
+        ),
+        dbc.Form(
+            [
+                html.Label('Choose a visualization:'),
+                html.Br(), 
+                ontology_dropdown2,
             ]
         ),
     ],
@@ -79,10 +138,17 @@ tab1_content = html.Div(
                     html.Hr(),
                     dbc.Row(
                         [
-                            dbc.Col(controls_participant, sm=3),
-                            dbc.Col(metrics_table, sm=6)
+                            dbc.Col(controls_participant1, sm=3),
+                            dbc.Col(metrics_table1, sm=6)
                         ]
-                    )
+                    ),
+                    html.Hr(),
+                    dbc.Row(
+                        [
+                            dbc.Col(controls_participant2, sm=3),
+                            dbc.Col(metrics_table2, sm=6)
+                        ]
+                    ),
                 ]
             )
         )
@@ -91,7 +157,7 @@ tab1_content = html.Div(
 
 ## Tab 2 
 quantile_dropdown = dcc.Dropdown(
-    id='quantile-dropdown', options=['Top 25%','Bottom 25%','All'], value='Top 25%'
+    id='quantile-dropdown', options=['Top 25%','Bottom 25%','Top and Bottom','All'], value='Top 25%'
 )
 
 controls_quantile = dbc.Card(
@@ -139,14 +205,23 @@ app.layout = html.Div([
         'textAlign':'center'
     })
 
-# Table
+# Table 1
 @app.callback(
-    Output("metrics_table", "data"),
-    Input("participant1", "value")
+    Output("metrics_table1", "data"),
+    [Input("participant1", "value"), Input("ontology1", "value")]
 )
-def update_table(participant):
-    table_updated = add_data[add_data["ID"] == participant].to_dict("records")
-    return table_updated
+def update_table1(participant, ontology):
+    table_updated1 = add_data[(add_data["ID"] == participant) & (add_data["Visualization"] == ontology)].to_dict("records")
+    return table_updated1
+
+# Table 2
+@app.callback(
+    Output("metrics_table2", "data"),
+    [Input("participant2", "value"), Input("ontology2", "value")]
+)
+def update_table2(participant, ontology):
+    table_updated2 = add_data[(add_data["ID"] == participant) & (add_data["Visualization"] == ontology)].to_dict("records")
+    return table_updated2
 
 # Time vs Task Graph
 @app.callback(
@@ -158,6 +233,8 @@ def update_graph(quantile):
         data = top
     elif quantile == 'Bottom 25%':
         data = bot
+    elif quantile == 'Top and Bottom':
+        data = both_groups
     else:
         data = all
 
@@ -177,6 +254,8 @@ def update_graph(quantile):
         data = top
     elif quantile == 'Bottom 25%':
         data = bot
+    elif quantile == 'Top and Bottom':
+        data = both_groups
     else:
         data = all
 
