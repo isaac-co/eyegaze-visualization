@@ -1,3 +1,4 @@
+import plotly.express as px
 import pandas as pd
 import math
 import os
@@ -201,3 +202,47 @@ def get_participants():
     df = pd.DataFrame({'participant':participants,'order':orders})
     df.sort_values(by="order", inplace=True)
     return df['participant'].tolist()
+
+def get_heatmap(participant, visualization):
+
+    route = f'datasets/{participant}/{participant}'
+
+    fxd_cols = ['number', 'time', 'duration', 'screen_x', 'screen_y']
+
+    if visualization == 'Tree':
+        fxd = pd.read_csv(f'{route}.treeFXD.txt', sep='\t', names = fxd_cols, on_bad_lines='skip')
+    else:
+        fxd = pd.read_csv(f'{route}.graphFXD.txt', sep='\t', names = fxd_cols, on_bad_lines='skip')
+
+    fig = px.density_heatmap(fxd, x="screen_x", y="screen_y", color_continuous_scale="Sunset")
+    fig.update_layout(
+    title=f"Fixation Heatmap for participant {participant}",
+    xaxis_title="X Coordinates",
+    yaxis_title="Y Coordinates")
+
+    return fig
+
+def get_heatmap_group(df):
+
+    fxd_cols = ['number', 'time', 'duration', 'screen_x', 'screen_y']
+
+    res = pd.DataFrame(columns=fxd_cols)
+
+    for _, row in df[['ID','Ontologies','Visualization']].iterrows():
+        
+        route = f'datasets/{row["ID"]}/{row["ID"]}'
+        
+        if row['Visualization'] == 'Tree':
+            fxd = pd.read_csv(f'{route}.treeFXD.txt', sep='\t', names = fxd_cols, on_bad_lines='skip')
+        else:
+            fxd = pd.read_csv(f'{route}.graphFXD.txt', sep='\t', names = fxd_cols, on_bad_lines='skip')
+        
+        res = pd.concat([res,fxd])
+        
+    fig = px.density_heatmap(res, x="screen_x", y="screen_y", color_continuous_scale="Sunset")
+    fig.update_layout(
+    title=f"Fixation Heatmap for ",
+    xaxis_title="X Coordinates",
+    yaxis_title="Y Coordinates")
+
+    return fig

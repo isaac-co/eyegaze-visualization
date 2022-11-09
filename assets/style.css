@@ -1,0 +1,27 @@
+body {
+    height: 100%;
+    background: rgb(133,61,246);
+    background: linear-gradient(122deg, rgb(95, 125, 116) 0%, rgb(130, 157, 164) 35%, rgb(78, 88, 97) 100%);
+    padding: 2%;
+}
+
+.controls {
+    box-shadow: 5px 10px 8px #888888;
+    margin-bottom: 20px;
+}
+
+h1 {
+    margin-bottom: 1rem;
+}
+
+#heatmap1 {
+    margin-left: 400px;
+}
+
+#heatmap2 {
+    margin-left: 400px;
+}
+
+#title {
+    color: #fffefe;
+}
